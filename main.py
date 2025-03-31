@@ -4,7 +4,7 @@ import stat
 import git
 import re
 
-from chunker import Chunker
+from chunker import Chunker, ChunkingMode
 from embedder import Embedder
 
 # repo_url: str = ""  # change to whatever repo you need to skip repo url entering
@@ -13,9 +13,10 @@ repo_url: str = "https://github.com/Vayneel/Bragi.git"
 
 local_repo_path: str = "repo"
 repo: git.Repo
-chunking_mode = "lines"  # lines or chars
-chunk_size: int = 6  # how many lines / chars to put in single chunk (including chunk overlap)
-chunk_overlap: int = 4  # how many lines / chars are going to overlap with other chunks (half with previous, half with following chunk)
+chunking_mode: ChunkingMode = ChunkingMode.CHARS  # lines or chars
+chunk_size: int = 640  # how many lines / chars to put in single chunk (including chunk overlap)
+chunk_overlap: int = 170  # how many lines / chars are going to overlap with other chunks (half with previous, half with following chunk)
+chunk_all_files: bool = False  # enable at your own risk
 
 
 def print_done(process_name: str):
@@ -76,16 +77,21 @@ def clone_repo():
 @print_done("Chunking & embedding files")
 def chunk_embed_files():
     embedder = Embedder()
-    chunker = Chunker(chunk_size=chunk_size, chunk_overlap=chunk_overlap, chunk_all_files=False)
+    chunker = Chunker(
+        chunking_mode=chunking_mode,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        chunk_all_files=chunk_all_files
+    )
     for chunk in chunker.chunk_repo(path=local_repo_path):
-        # print(chunk, "\n\n\n")
+        print(chunk, "\n\n\n")
         print(embedder.get_token_usage(chunk["chunk"]))
 
 
 def main():
-    preparation()  # deletion of old files
-    repo_url_input()  # loop that waits for proper git url input
-    clone_repo()  # tries to clone repo if exists
+    # preparation()  # deletion of old files
+    # repo_url_input()  # loop that waits for proper git url input
+    # clone_repo()  # tries to clone repo if exists
     chunk_embed_files()
     print("All set up.\n")
 
