@@ -80,7 +80,7 @@ def clone_repo():
 
 
 @print_done("Chunking & embedding files")
-def chunk_embed_files():
+def index_files():
     embedder = Embedder()
     index = Index(embedder, reset_db=reset_db)
     chunker = Chunker(
@@ -101,7 +101,7 @@ def main():
     preparation()  # deletion of old files
     repo_url_input()  # loop that waits for proper git url input
     clone_repo()  # tries to clone repo if exists
-    chunk_embed_files()
+    index_files()
     print("All set up.\n")
 
 
