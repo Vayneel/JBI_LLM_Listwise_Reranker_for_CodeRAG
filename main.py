@@ -73,17 +73,15 @@ def clone_repo():
 
 @print_done("Chunking & embedding files")
 def chunk_embed_files():
-    chunker = Chunker(chunk_size=chunk_size, chunk_overlap=chunk_overlap,
-                      chunk_all_files=False  # enabling may cause encoding-related issue
-                      )
+    chunker = Chunker(chunk_size=chunk_size, chunk_overlap=chunk_overlap, chunk_all_files=False)
     for chunk in chunker.chunk_repo(path=local_repo_path):
         print(chunk, "\n\n\n")
 
 
 def main():
-    # preparation()  # deletion of old files
-    # repo_url_input()  # loop that waits for proper git url input
-    # clone_repo()  # tries to clone repo if exists
+    preparation()  # deletion of old files
+    repo_url_input()  # loop that waits for proper git url input
+    clone_repo()  # tries to clone repo if exists
     chunk_embed_files()
 
 

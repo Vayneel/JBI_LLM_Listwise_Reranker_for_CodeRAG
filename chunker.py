@@ -8,27 +8,20 @@ class Chunker:
     __chunk_size: int  # lines to chunk
     __chunk_overlap: int  # how many lines will overlap for each chunk
     __chunk_all_files: bool  # used in __extract_allowed_files method
-    collection: list[dict[str, str | dict[str, str | int]]]  # list of chunks with metadata
+    __file_encoding: str = None # switches to latin-1 if __chunk_all_files enabled to prevent errors
 
     """
     Example:
     
     collection = [
         {
-            "chunk": "...",
             "metadata": {
                 "filename": "foo.bar",
-                "chunk-id": 0
-            }
+                "chunk-id": N
+            },
+            
+            "chunk": "...",
         },
-        
-        {
-            "chunk": "...",
-            "metadata": {
-                "filename": "foo.bar",
-                "chunk-id": 1
-            }
-        }
     ]
     """
 
@@ -37,36 +30,10 @@ class Chunker:
         self.__chunk_size = chunk_size
         self.__chunk_overlap = chunk_overlap
         self.__chunk_all_files = chunk_all_files
-        self.collection = []
+
+        if chunk_all_files: self.__file_encoding = "latin-1"
 
         if chunk_size < self.__chunk_overlap + 1: self.__chunk_size = self.__chunk_overlap + 1
-
-
-    def __extract_allowed_files(self, files: list[tuple[str, str]]) -> list[tuple[str, str]]:
-        if self.__chunk_all_files: return files
-
-        allowed_extensions = (
-            ".py",
-            ".java",
-            ".js",
-            ".html",
-            ".css",
-            ".c",
-            ".h",
-            ".cpp",
-            ".md",
-            ".sh",
-            ".cs",
-            ".kt", ".kts", "ktm",
-        )
-
-        allowed_files = []
-
-        for file in files:
-            if any(file[1].endswith(ext) for ext in allowed_extensions):
-                allowed_files.append(file)
-
-        return allowed_files
 
 
     def __is_file_allowed(self, file: str) -> bool:
@@ -78,12 +45,9 @@ class Chunker:
             ".js",
             ".html",
             ".css",
-            ".c",
-            ".h",
-            ".cpp",
+            ".c", ".h", ".cpp", ".cs",
             ".md",
             ".sh",
-            ".cs",
             ".kt", ".kts", "ktm",
         )
 
@@ -107,24 +71,16 @@ class Chunker:
                 chunk += content[current_line + line_index]
 
             yield {
-                "chunk": chunk,
                 "metadata": {
                     "filename": filename,
                     "chunk-index": chunk_index,
-                }
+                },
+
+                "chunk": chunk,
             }
 
             current_line += line_step
             chunk_index += 1
-
-
-    def __chunk_files(self, files: list[tuple[str, str]]):
-        for file in files:
-            with open(os.path.join(file[0], file[1]), "r") as f:
-                yield from self.__chunk_file(
-                    file[1],  # filename
-                    f.readlines()
-                )
 
 
     def chunk_repo(self, path):
@@ -134,5 +90,9 @@ class Chunker:
             for file in files:
                 if not self.__is_file_allowed(file): continue
 
-                with open(os.path.join(root, file), "r") as f:
-                    yield from self.__chunk_file(file, f.readlines())
+                try:
+                    with open(os.path.join(root, file), "r", encoding=self.__file_encoding) as f:
+                        yield from self.__chunk_file(file, f.readlines())
+                except UnicodeDecodeError:
+                    print(f"Unsupported encoding in file {os.path.join(root, file)}. Exiting program...")
+                    exit(1)
