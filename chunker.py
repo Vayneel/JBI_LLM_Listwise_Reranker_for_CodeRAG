@@ -5,9 +5,10 @@ class Chunker:
     Class for chunking documents.
     """
 
-    collection: list[dict[str, str | dict[str, str | int]]]  # list of chunks with metadata
     __chunk_size: int  # lines to chunk
     __chunk_overlap: int  # how many lines will overlap for each chunk
+    __chunk_all_files: bool  # used in __extract_allowed_files method
+    collection: list[dict[str, str | dict[str, str | int]]]  # list of chunks with metadata
 
     """
     Example:
@@ -32,17 +33,17 @@ class Chunker:
     """
 
 
-    def __init__(self, chunk_size: int, chunk_overlap: int) -> None:
+    def __init__(self, chunk_size: int, chunk_overlap: int, chunk_all_files: bool = False) -> None:
         self.__chunk_size = chunk_size
         self.__chunk_overlap = chunk_overlap
+        self.__chunk_all_files = chunk_all_files
         self.collection = []
 
         if chunk_size < self.__chunk_overlap + 1: self.__chunk_size = self.__chunk_overlap + 1
 
 
-    @staticmethod
-    def __extract_allowed_files(files: list[tuple[str, str]], allow_all: bool = False) -> list[tuple[str, str]]:
-        if allow_all: return files
+    def __extract_allowed_files(self, files: list[tuple[str, str]]) -> list[tuple[str, str]]:
+        if self.__chunk_all_files: return files
 
         allowed_extensions = (
             ".py",
@@ -68,20 +69,28 @@ class Chunker:
         return allowed_files
 
 
-    @staticmethod
-    def __extract_file_contents(files: list[tuple[str, str]]) -> list[tuple[str, list[str]]]:
-        files_content = []
+    def __is_file_allowed(self, file: str) -> bool:
+        if self.__chunk_all_files: return True
 
-        for file in files:
-            with open(os.path.join(file[0], file[1]), "r") as f:
-                files_content.append(
-                    (
-                        file[1],  # filename
-                        f.readlines()
-                    )
-                )
+        allowed_extensions = (
+            ".py",
+            ".java",
+            ".js",
+            ".html",
+            ".css",
+            ".c",
+            ".h",
+            ".cpp",
+            ".md",
+            ".sh",
+            ".cs",
+            ".kt", ".kts", "ktm",
+        )
 
-        return files_content
+        if file.endswith(allowed_extensions):
+            return True
+
+        return False
 
 
     def __chunk_file(self, filename: str, content: list[str]):
@@ -91,35 +100,39 @@ class Chunker:
 
         while current_line < len(content):
             chunk: str = ""
-            
+
             for line_index in range(self.__chunk_size):
                 if current_line + line_index >= len(content): return
 
                 chunk += content[current_line + line_index]
 
-            self.collection.append({
+            yield {
                 "chunk": chunk,
                 "metadata": {
                     "filename": filename,
                     "chunk-index": chunk_index,
                 }
-            })
+            }
 
             current_line += line_step
             chunk_index += 1
 
 
-    def chunk_dir(self, path):
-        if not os.path.exists(path): return None
+    def __chunk_files(self, files: list[tuple[str, str]]):
+        for file in files:
+            with open(os.path.join(file[0], file[1]), "r") as f:
+                yield from self.__chunk_file(
+                    file[1],  # filename
+                    f.readlines()
+                )
 
-        files = []
+
+    def chunk_repo(self, path):
+        if not os.path.exists(path): return None
 
         for root, _, files in os.walk(path):
             for file in files:
-                files.append((root, file))
+                if not self.__is_file_allowed(file): continue
 
-        files = self.__extract_allowed_files(files)
-        file_contents = self.__extract_file_contents(files)
-
-        for filename, content in file_contents:
-            self.__chunk_file(filename, content)
+                with open(os.path.join(root, file), "r") as f:
+                    yield from self.__chunk_file(file, f.readlines())
