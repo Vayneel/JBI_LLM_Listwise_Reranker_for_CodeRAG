@@ -1,6 +1,9 @@
 repo/*
 repo/**
 
+temp/*
+temp/**
+
 .idea/*
 .idea/**
 

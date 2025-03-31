@@ -4,7 +4,7 @@ import stat
 import git
 import re
 
-repo_url: str = "https://github.com/viarotel-org/escrcpy"  # change to whatever repo you need to skip repo url entering
+repo_url: str = "https://github.com/viarotel-org/escrcpy.git"  # change to whatever repo you need to skip repo url entering
 local_repo_path: str = "repo"
 repo: git.Repo
 
@@ -17,15 +17,20 @@ def preparation():
     shutil.rmtree(local_repo_path, onerror=on_remove_error)  # removes content of directory with repository
 
 
-def main():
-    global repo_url, repo
+def repo_url_input():
+    global repo_url
 
     while not re.fullmatch(r"https://github\.com/[\w-]+/[\w-]+\.git", repo_url):
         # todo more variations like ssh etc. if possible
         repo_url = input("Please enter the repo url (enter 'exit' to exit the loop): ").strip()
+
         if repo_url == "exit":
             print("Exiting program...")
-            return
+            exit(0)
+
+
+def clone_repo():
+    global repo
 
     try:
         repo = git.Repo.clone_from(repo_url, to_path=local_repo_path)
@@ -34,7 +39,16 @@ def main():
         exit(1)
 
     if repo.bare:
-       print("This repo is bare")
+        print("This repo is bare. Exiting program...")
+        exit(0)
+
+
+def main():
+    repo_url_input()  # loop that waits for proper git url input
+    clone_repo()  # tries to clone repo if exists
+
+
+
 
 if __name__ == "__main__":
     preparation()
