@@ -6,8 +6,8 @@ class Chunker:
     """
 
     collection: list[dict[str, str | dict[str, str | int]]]  # list of chunks with metadata
-    chunk_size: int  # lines to chunk
-    chunk_overlap: int  # how many lines will overlap for each chunk
+    __chunk_size: int  # lines to chunk
+    __chunk_overlap: int  # how many lines will overlap for each chunk
 
     """
     Example:
@@ -33,8 +33,11 @@ class Chunker:
 
 
     def __init__(self, chunk_size: int, chunk_overlap: int) -> None:
-        self.chunk_size = chunk_size
-        self.chunk_overlap = chunk_overlap
+        self.__chunk_size = chunk_size
+        self.__chunk_overlap = chunk_overlap
+        self.collection = []
+
+        if chunk_size < self.__chunk_overlap + 1: self.__chunk_size = self.__chunk_overlap + 1
 
 
     @staticmethod
@@ -66,7 +69,7 @@ class Chunker:
 
 
     @staticmethod
-    def __extract_file_contents(files: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    def __extract_file_contents(files: list[tuple[str, str]]) -> list[tuple[str, list[str]]]:
         files_content = []
 
         for file in files:
@@ -74,21 +77,36 @@ class Chunker:
                 files_content.append(
                     (
                         file[1],  # filename
-                        f.read()
+                        f.readlines()
                     )
                 )
 
         return files_content
 
 
-    def chunk_file(self, root, filename):
-        path = os.path.join(root, filename)
-        if not os.path.exists(path): return
+    def __chunk_file(self, filename: str, content: list[str]):
+        current_line: int = 0
+        chunk_index: int = 0
+        line_step: int = self.__chunk_size - (self.__chunk_overlap // 2 + self.__chunk_overlap % 2)
 
-        with open(path, "r") as f:
-            file_content = f.readlines()
+        while current_line < len(content):
+            chunk: str = ""
+            
+            for line_index in range(self.__chunk_size):
+                if current_line + line_index >= len(content): return
 
+                chunk += content[current_line + line_index]
 
+            self.collection.append({
+                "chunk": chunk,
+                "metadata": {
+                    "filename": filename,
+                    "chunk-index": chunk_index,
+                }
+            })
+
+            current_line += line_step
+            chunk_index += 1
 
 
     def chunk_dir(self, path):
@@ -104,4 +122,4 @@ class Chunker:
         file_contents = self.__extract_file_contents(files)
 
         for filename, content in file_contents:
-            self.chunk_file(filename, content)
+            self.__chunk_file(filename, content)
