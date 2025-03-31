@@ -3,6 +3,7 @@ import shutil
 import stat
 import git
 import re
+from pprint import pprint
 
 from chunker import Chunker, ChunkingMode
 from embedder import Embedder
@@ -16,6 +17,7 @@ local_repo_path: str = "repo"
 local_db_path: str = "database"
 reset_db: bool = True  # must be enabled to run without issues
 repo: git.Repo
+index: Index
 chunking_mode: ChunkingMode = ChunkingMode.CHARS  # lines or chars
 chunk_size: int = 720  # how many lines / chars to put in single chunk (including chunk overlap)
 chunk_overlap: int = 240  # how many lines / chars are going to overlap with other chunks (half with previous, half with following chunk)
@@ -81,6 +83,8 @@ def clone_repo():
 
 @print_done("Chunking & embedding files")
 def index_files():
+    global index
+
     embedder = Embedder()
     index = Index(embedder, reset_db=reset_db)
     chunker = Chunker(
@@ -94,14 +98,22 @@ def index_files():
         index.add_record(chunk)
 
 
+def user_query():
+    if not index: return
 
+    # query = input("Please enter the query: ").strip()
+    # print(index.search(query))
+    query = "where volume-something function is defined"
+
+    pprint(index.search(query, k=3))
 
 
 def main():
     preparation()  # deletion of old files
     repo_url_input()  # loop that waits for proper git url input
     clone_repo()  # tries to clone repo if exists
-    index_files()
+    index_files()  # chunking, embedding and indexing files from repo
+    user_query()
     print("All set up.\n")
 
 
