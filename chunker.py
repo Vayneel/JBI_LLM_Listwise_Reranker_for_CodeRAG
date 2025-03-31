@@ -46,7 +46,7 @@ class Chunker:
             ".html",
             ".css",
             ".c", ".h", ".cpp", ".cs",
-            ".md",
+            ".md", ".txt",
             ".sh",
             ".kt", ".kts", "ktm",
         )

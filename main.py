@@ -5,6 +5,7 @@ import git
 import re
 
 from chunker import Chunker
+from embedder import Embedder
 
 # repo_url: str = ""  # change to whatever repo you need to skip repo url entering
 # repo_url: str = "https://github.com/viarotel-org/escrcpy.git"
@@ -12,8 +13,9 @@ repo_url: str = "https://github.com/Vayneel/Bragi.git"
 
 local_repo_path: str = "repo"
 repo: git.Repo
-chunk_size: int = 30  # how many lines to put in single chunk (including chunk overlap)
-chunk_overlap: int = 10  # how many lines are going to overlap with other chunks (half with previous, half with following chunk)
+chunking_mode = "lines"  # lines or chars
+chunk_size: int = 6  # how many lines / chars to put in single chunk (including chunk overlap)
+chunk_overlap: int = 4  # how many lines / chars are going to overlap with other chunks (half with previous, half with following chunk)
 
 
 def print_done(process_name: str):
@@ -73,9 +75,11 @@ def clone_repo():
 
 @print_done("Chunking & embedding files")
 def chunk_embed_files():
+    embedder = Embedder()
     chunker = Chunker(chunk_size=chunk_size, chunk_overlap=chunk_overlap, chunk_all_files=False)
     for chunk in chunker.chunk_repo(path=local_repo_path):
-        print(chunk, "\n\n\n")
+        # print(chunk, "\n\n\n")
+        print(embedder.get_token_usage(chunk["chunk"]))
 
 
 def main():
@@ -83,8 +87,7 @@ def main():
     repo_url_input()  # loop that waits for proper git url input
     clone_repo()  # tries to clone repo if exists
     chunk_embed_files()
-
-
+    print("All set up.\n")
 
 
 if __name__ == "__main__":
