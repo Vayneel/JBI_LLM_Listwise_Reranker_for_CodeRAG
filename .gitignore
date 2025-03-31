@@ -1,6 +1,9 @@
 repo/*
 repo/**
 
+database/*
+database/**
+
 temp/*
 temp/**
 

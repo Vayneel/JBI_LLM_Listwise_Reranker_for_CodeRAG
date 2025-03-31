@@ -6,18 +6,21 @@ import re
 
 from chunker import Chunker, ChunkingMode
 from embedder import Embedder
+from index import Index
 
 # repo_url: str = ""  # change to whatever repo you need to skip repo url entering
 # repo_url: str = "https://github.com/viarotel-org/escrcpy.git"
 repo_url: str = "https://github.com/Vayneel/Bragi.git"
 
 local_repo_path: str = "repo"
+local_db_path: str = "database"
+reset_db: bool = True  # must be enabled to run without issues
 repo: git.Repo
 chunking_mode: ChunkingMode = ChunkingMode.CHARS  # lines or chars
 chunk_size: int = 720  # how many lines / chars to put in single chunk (including chunk overlap)
 chunk_overlap: int = 240  # how many lines / chars are going to overlap with other chunks (half with previous, half with following chunk)
 chunk_all_files: bool = False  # enable at your own risk
-encoding: str | None = None
+encoding: str | None = None  # change at your own risk
 
 
 def print_done(process_name: str):
@@ -39,12 +42,13 @@ def on_remove_error(func, path, exc_info):
 
 def remove_directory(path: str) -> None:
     if not os.path.exists(path): return
-    shutil.rmtree(local_repo_path, onerror=on_remove_error)  # removes content of directory with repository
+    shutil.rmtree(path, onerror=on_remove_error)  # removes content of directory with repository
 
 
 @print_done("Program preparation")
 def preparation() -> None:
     remove_directory(local_repo_path)  # if we've cloned some repository before, we need to remove old repo
+    if reset_db: remove_directory(local_db_path)  # removes old database if enabled
 
 
 def repo_url_input():
@@ -78,6 +82,7 @@ def clone_repo():
 @print_done("Chunking & embedding files")
 def chunk_embed_files():
     embedder = Embedder()
+    index = Index(embedder, reset_db=reset_db)
     chunker = Chunker(
         chunking_mode=chunking_mode,
         chunk_size=chunk_size,
@@ -86,14 +91,16 @@ def chunk_embed_files():
         encoding=encoding,
     )
     for chunk in chunker.chunk_repo(path=local_repo_path):
-        print(chunk, "\n\n\n")
-        print(embedder.embed_text(chunk["chunk"]))
+        index.add_record(chunk)
+
+
+
 
 
 def main():
-    # preparation()  # deletion of old files
-    # repo_url_input()  # loop that waits for proper git url input
-    # clone_repo()  # tries to clone repo if exists
+    preparation()  # deletion of old files
+    repo_url_input()  # loop that waits for proper git url input
+    clone_repo()  # tries to clone repo if exists
     chunk_embed_files()
     print("All set up.\n")
 
