@@ -1,4 +1,6 @@
 import os
+import shutil
+import stat
 import git
 import re
 
@@ -6,23 +8,18 @@ repo_url: str = ""
 local_repo_path: str = "repo"
 repo: git.Repo
 
+def on_remove_error(func, path, exc_info):
+    os.chmod(path, stat.S_IWRITE)  # change to writable
+    func(path)  # retry deletion
 
 def preparation():
-    if not os.path.exists(local_repo_path): return
-
-    for root, _, files in os.walk(local_repo_path):
-        for file in files:
-            os.remove(os.path.join(root, file))
-
-    for root, dirs, _ in os.walk(local_repo_path):
-        for directory in dirs:
-            os.rmdir(os.path.join(root, directory))
+    if not os.path.exists(local_repo_path): return  # if we've cloned repository before
+    shutil.rmtree(local_repo_path, onerror=on_remove_error)  # removes content of directory with repository
 
 
 def main():
-    global repo_url, local_repo_path, repo
+    global repo_url, repo
 
-    # https://github.com/gitpython-developers/GitPython.git
     while not re.fullmatch(r"https://github\.com/[\w-]+/[\w-]+\.git", repo_url):
         # todo more variations like ssh etc. if possible
         repo_url = input("Please enter the repo url: ").strip()
