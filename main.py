@@ -22,7 +22,10 @@ def main():
 
     while not re.fullmatch(r"https://github\.com/[\w-]+/[\w-]+\.git", repo_url):
         # todo more variations like ssh etc. if possible
-        repo_url = input("Please enter the repo url: ").strip()
+        repo_url = input("Please enter the repo url (enter 'exit' to exit the loop): ").strip()
+        if repo_url == "exit":
+            print("Exiting program...")
+            return
 
     try:
         repo = git.Repo.clone_from(repo_url, to_path=local_repo_path)
