@@ -14,9 +14,10 @@ repo_url: str = "https://github.com/Vayneel/Bragi.git"
 local_repo_path: str = "repo"
 repo: git.Repo
 chunking_mode: ChunkingMode = ChunkingMode.CHARS  # lines or chars
-chunk_size: int = 640  # how many lines / chars to put in single chunk (including chunk overlap)
-chunk_overlap: int = 170  # how many lines / chars are going to overlap with other chunks (half with previous, half with following chunk)
+chunk_size: int = 720  # how many lines / chars to put in single chunk (including chunk overlap)
+chunk_overlap: int = 240  # how many lines / chars are going to overlap with other chunks (half with previous, half with following chunk)
 chunk_all_files: bool = False  # enable at your own risk
+encoding: str | None = None
 
 
 def print_done(process_name: str):
@@ -81,11 +82,12 @@ def chunk_embed_files():
         chunking_mode=chunking_mode,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
-        chunk_all_files=chunk_all_files
+        chunk_all_files=chunk_all_files,
+        encoding=encoding,
     )
     for chunk in chunker.chunk_repo(path=local_repo_path):
         print(chunk, "\n\n\n")
-        print(embedder.get_token_usage(chunk["chunk"]))
+        print(embedder.embed_text(chunk["chunk"]))
 
 
 def main():

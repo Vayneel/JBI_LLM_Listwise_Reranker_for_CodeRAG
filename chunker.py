@@ -3,8 +3,8 @@ from enum import Enum
 
 
 class ChunkingMode(Enum):
-    LINES = "lines"
-    CHARS = "chars"
+    LINES = 'l'
+    CHARS = 'c'
 
 
 class Chunker:
@@ -15,7 +15,7 @@ class Chunker:
     __chunk_size: int  # lines to chunk
     __chunk_overlap: int  # how many lines will overlap for each chunk
     __chunk_all_files: bool  # used in __extract_allowed_files method
-    __file_encoding: str = None # switches to latin-1 if __chunk_all_files enabled to prevent errors
+    __file_encoding: str
 
     """
     Example:
@@ -34,13 +34,12 @@ class Chunker:
 
 
     def __init__(self, chunking_mode: ChunkingMode, chunk_size: int, chunk_overlap: int,
-                 chunk_all_files: bool = False) -> None:
+                 chunk_all_files: bool = False, encoding: str = None) -> None:
         self.chunking_mode: ChunkingMode = chunking_mode
         self.__chunk_size = chunk_size
         self.__chunk_overlap = chunk_overlap
         self.__chunk_all_files = chunk_all_files
-
-        if chunk_all_files: self.__file_encoding = "latin-1"
+        self.__file_encoding = encoding
 
         if chunk_size < self.__chunk_overlap + 1: self.__chunk_size = self.__chunk_overlap + 1
 
@@ -54,10 +53,12 @@ class Chunker:
             ".js",
             ".html",
             ".css",
+            ".xml"
             ".c", ".h", ".cpp", ".cs",
-            ".md", ".txt",
+            ".md", ".txt", ".json"
             ".sh",
             ".kt", ".kts", "ktm",
+            ".gradle"
         )
 
         if file.endswith(allowed_extensions):
@@ -130,6 +131,7 @@ class Chunker:
                         elif self.chunking_mode == ChunkingMode.CHARS:
                             yield from self.__chunk_text(file, f.read())
 
-                except UnicodeDecodeError:
-                    print(f"Unsupported encoding in file {os.path.join(root, file)}. Exiting program...")
+                except (UnicodeDecodeError, UnicodeError) as e:
+                    print(f"Encoding-related error in file {os.path.join(root, file)}. Exiting program...")
+                    print(f"\n[ERROR OUTPUT]\n{e}")
                     exit(1)
