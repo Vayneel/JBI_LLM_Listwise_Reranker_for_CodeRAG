@@ -4,7 +4,7 @@ import stat
 import git
 import re
 
-repo_url: str = ""
+repo_url: str = "https://github.com/viarotel-org/escrcpy"  # change to whatever repo you need to skip repo url entering
 local_repo_path: str = "repo"
 repo: git.Repo
 
