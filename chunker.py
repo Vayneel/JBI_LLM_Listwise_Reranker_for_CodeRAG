@@ -2,6 +2,8 @@ import os
 from enum import Enum
 from charset_normalizer import from_path
 
+from embedder import Embedder
+
 
 class ChunkingMode(Enum):
     LINES = 'l'
@@ -17,6 +19,7 @@ class Chunker:
     __chunk_overlap: int  # how many lines will overlap for each chunk
     __chunk_all_files: bool  # used in __extract_allowed_files method
     __file_encoding: str
+    __embedder: Embedder
     __debug: bool
 
     """
@@ -35,13 +38,14 @@ class Chunker:
     """
 
 
-    def __init__(self, chunking_mode: ChunkingMode, chunk_size: int, chunk_overlap: int,
+    def __init__(self, chunking_mode: ChunkingMode, chunk_size: int, chunk_overlap: int, embedder: Embedder,
                  chunk_all_files: bool = False, encoding: str = None, debug: bool = False) -> None:
         self.chunking_mode: ChunkingMode = chunking_mode
         self.__chunk_size = chunk_size
         self.__chunk_overlap = chunk_overlap
         self.__chunk_all_files = chunk_all_files
         self.__file_encoding = encoding.upper()
+        self.__embedder = embedder
         self.__debug = debug
 
         if chunk_size < self.__chunk_overlap + 1: self.__chunk_size = self.__chunk_overlap + 1
@@ -77,7 +81,7 @@ class Chunker:
         line_step: int = self.__chunk_size - (self.__chunk_overlap // 2 + self.__chunk_overlap % 2)
 
         while current_line < len(content):
-            chunk: str = ""
+            chunk: str = f"{filename}\n"
 
             for line_index in range(self.__chunk_size):
                 if current_line + line_index >= len(content): return
@@ -102,11 +106,13 @@ class Chunker:
         chunk_index: int = 0  # index of chunk in the file; saved in metadata of chunk
         char_step: int = self.__chunk_size - (self.__chunk_overlap // 2 + self.__chunk_overlap % 2)
 
+        chunk: str = f"{filename}\n"
+
         while current_char < len(content):
             if current_char + char_step >= len(content):
-                chunk: str = content[current_char: -1]  # takes all chars left
+                chunk += content[current_char: -1]  # takes all chars left
             else:
-                chunk: str = content[current_char : current_char + self.__chunk_size]  # takes __chunk_size chars
+                chunk += content[current_char : current_char + self.__chunk_size]  # takes __chunk_size chars
 
             yield {
                 "metadata": {
@@ -121,8 +127,9 @@ class Chunker:
             chunk_index += 1
 
 
-    def __yield_chunks(self, root: str, file: str, encoding: str):
-        with open(os.path.join(root, file), "r", encoding=encoding) as f:
+    def __yield_chunks(self, root: str, filename: str, encoding: str):
+        file = os.path.join(root, filename)
+        with open(file, "r", encoding=encoding) as f:
             if self.chunking_mode == ChunkingMode.LINES:
                 yield from self.__chunk_lines(file, f.readlines())
             elif self.chunking_mode == ChunkingMode.CHARS:
