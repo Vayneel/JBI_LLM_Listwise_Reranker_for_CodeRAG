@@ -48,6 +48,7 @@ class Chunker:
 
 
     def __is_file_allowed(self, file: str) -> bool:
+        # todo allow every file
         if self.__chunk_all_files: return True
 
         allowed_extensions = (
@@ -129,12 +130,7 @@ class Chunker:
 
 
     def __try_with_another_encoding(self, root: str, file: str):
-        # encodings = {
-        #                 "UTF-8", "UTF-16", "UTF-16LE", "UTF-16BE",
-        #                 "LATIN1"
-        #             } - {self.__file_encoding}
-
-        result = from_path("index.py").best()
+        result = from_path(os.path.join(root, file)).best()
         if result is None or result.encoding == self.__file_encoding: return
 
         try:

@@ -87,21 +87,16 @@ def clone_repo():
 
 @print_done("Chunking & embedding files")
 def index_files():
-    global index
-
-    embedder = Embedder(debug=debug)
-    index = Index(embedder, debug=debug)
-    if "--skip-index" not in sys.argv:  # todo add check if db does not exist
-        chunker = Chunker(
-            chunking_mode=chunking_mode,
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            chunk_all_files=chunk_all_files,
-            encoding=encoding,
-            debug=debug,
-        )
-        for chunk in chunker.chunk_repo(path=local_repo_path):
-            index.add_record(chunk)
+    chunker = Chunker(
+        chunking_mode=chunking_mode,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        chunk_all_files=chunk_all_files,
+        encoding=encoding,
+        debug=debug,
+    )
+    for chunk in chunker.chunk_repo(path=local_repo_path):
+        index.add_record(chunk)
 
 
 def user_query():
@@ -111,15 +106,23 @@ def user_query():
     # print(index.search(query))
     query = "is there a function related to volume?"
 
-    pprint(index.search(query, k=3))
+    pprint(index.search(query))
 
 
 def main():
+    global index
+
     if "--skip-clone" not in sys.argv or not os.path.exists(local_repo_path):
         preparation()  # deletion of old files
         repo_url_input()  # loop that waits for proper git url input
         clone_repo()  # tries to clone repo if exists
-    index_files()  # chunking, embedding and indexing files from repo
+
+    embedder = Embedder(debug=debug)
+    index = Index(embedder, debug=debug)
+
+    if "--skip-index" not in sys.argv:  # todo add check if db does not exist
+        index_files()  # chunking, embedding and indexing files from repo
+
     user_query()
     print("All set up.\n")
 
