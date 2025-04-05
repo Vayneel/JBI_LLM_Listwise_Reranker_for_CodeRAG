@@ -97,7 +97,7 @@ class Chunker:
                 "chunk": chunk,
             }
 
-            current_line += line_step - (self.__chunk_overlap // 2 + self.__chunk_overlap % 2)
+            current_line += int(line_step * 0.8)
             chunk_index += 1
 
 
