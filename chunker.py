@@ -84,7 +84,7 @@ class Chunker:
             line_step: int = 0
 
             while self.__embedder.get_token_usage(chunk) < 512:
-                if current_line + line_step >= len(content): break
+                if current_line + line_step + 1 >= len(content): break
                 chunk += content[current_line + line_step].strip()
                 line_step += 1
 
