@@ -27,8 +27,9 @@ if "--skip-indexing" in sys.argv: print("Indexing will be skipped" if skip_index
 # repo_url: str = ""  # change to whatever repo you need to skip repo url entering
 repo_url: str = "https://github.com/viarotel-org/escrcpy.git"
 repo: git.Repo
+embedder: Embedder
 index: Index
-chunking_mode: ChunkingMode = ChunkingMode.CHARS  # lines or chars
+chunking_mode: ChunkingMode = ChunkingMode.LINES  # lines or chars
 chunk_size: int = 720  # how many lines / chars to put in single chunk (including chunk overlap)
 chunk_overlap: int = 240  # how many lines / chars are going to overlap with other chunks (half with previous, half with following chunk)
 chunk_all_files: bool = True  # enable at your own risk
@@ -77,7 +78,7 @@ def clone_repo():
 
 @print_done("Initializing index")
 def initialize_index():
-    global index
+    global embedder, index
 
     embedder = Embedder(debug=debug)
     index = Index(embedder, debug=debug)
@@ -91,6 +92,7 @@ def index_files():
         chunking_mode=chunking_mode,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
+        embedder=embedder,
         chunk_all_files=chunk_all_files,
         encoding=ENCODING,
         debug=debug,

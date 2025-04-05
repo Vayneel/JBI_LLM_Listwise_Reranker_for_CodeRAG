@@ -78,15 +78,15 @@ class Chunker:
     def __chunk_lines(self, filename: str, content: list[str]):
         current_line: int = 0
         chunk_index: int = 0  # index of chunk in the file; saved in metadata of chunk
-        line_step: int = self.__chunk_size - (self.__chunk_overlap // 2 + self.__chunk_overlap % 2)
 
         while current_line < len(content):
             chunk: str = f"{filename}\n"
+            line_step: int = 0
 
-            for line_index in range(self.__chunk_size):
-                if current_line + line_index >= len(content): return
-
-                chunk += content[current_line + line_index]
+            while self.__embedder.get_token_usage(chunk) < 512:
+                if current_line + line_step >= len(content): break
+                chunk += content[current_line + line_step].strip()
+                line_step += 1
 
             yield {
                 "metadata": {
@@ -97,7 +97,7 @@ class Chunker:
                 "chunk": chunk,
             }
 
-            current_line += line_step
+            current_line += line_step - (self.__chunk_overlap // 2 + self.__chunk_overlap % 2)
             chunk_index += 1
 
 
