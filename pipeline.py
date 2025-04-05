@@ -6,6 +6,7 @@ from utilities import print_done, remove_directory
 from chunker import Chunker, ChunkingMode
 from embedder import Embedder
 from index import Index
+from index_faiss import FaissIndex
 
 import git
 

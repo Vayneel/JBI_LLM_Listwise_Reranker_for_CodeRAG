@@ -18,10 +18,8 @@ class Embedder:
 
 
     def embed_text(self, text: str):
-        # tokens = self.__tokenizer(text, return_tensors="pt", truncation=True, padding=True,
-        #                                    max_length=512).to(self.__device)
-        tokens = self.__tokenizer.tokenize(text, return_tensors="pt", truncation=True, padding=True,
-                                           max_length=512)
+        tokens = self.__tokenizer(text, return_tensors="pt", truncation=True, padding=True,
+                                           max_length=512).to(self.__device)
         if self.__debug: print("embedding chunk: \n{\n", text, "\n}")
         with torch.no_grad():
             outputs = self.__model(**tokens)

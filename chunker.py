@@ -2,7 +2,7 @@ import os
 from enum import Enum
 from charset_normalizer import from_path
 
-from embedder import Embedder
+from embedder_old import Embedder
 
 
 class ChunkingMode(Enum):
@@ -85,7 +85,7 @@ class Chunker:
 
             while self.__embedder.get_token_usage(chunk) < 512:
                 if current_line + line_step + 1 >= len(content): break
-                chunk += content[current_line + line_step].strip()
+                chunk += content[current_line + line_step].rstrip()
                 line_step += 1
 
             yield {

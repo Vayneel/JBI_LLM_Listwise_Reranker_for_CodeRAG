@@ -1,6 +1,4 @@
-import numpy as np
 import chromadb
-from chromadb.config import Settings
 from chromadb.api.types import IncludeEnum
 
 from embedder import Embedder
