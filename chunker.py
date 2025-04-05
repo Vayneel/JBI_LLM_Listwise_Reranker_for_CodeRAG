@@ -1,5 +1,6 @@
 import os
 from enum import Enum
+from charset_normalizer import from_path
 
 
 class ChunkingMode(Enum):
@@ -16,6 +17,7 @@ class Chunker:
     __chunk_overlap: int  # how many lines will overlap for each chunk
     __chunk_all_files: bool  # used in __extract_allowed_files method
     __file_encoding: str
+    __debug: bool
 
     """
     Example:
@@ -34,12 +36,13 @@ class Chunker:
 
 
     def __init__(self, chunking_mode: ChunkingMode, chunk_size: int, chunk_overlap: int,
-                 chunk_all_files: bool = False, encoding: str = None) -> None:
+                 chunk_all_files: bool = False, encoding: str = None, debug: bool = False) -> None:
         self.chunking_mode: ChunkingMode = chunking_mode
         self.__chunk_size = chunk_size
         self.__chunk_overlap = chunk_overlap
         self.__chunk_all_files = chunk_all_files
-        self.__file_encoding = encoding
+        self.__file_encoding = encoding.upper()
+        self.__debug = debug
 
         if chunk_size < self.__chunk_overlap + 1: self.__chunk_size = self.__chunk_overlap + 1
 
@@ -117,21 +120,45 @@ class Chunker:
             chunk_index += 1
 
 
+    def __yield_chunks(self, root: str, file: str, encoding: str):
+        with open(os.path.join(root, file), "r", encoding=encoding) as f:
+            if self.chunking_mode == ChunkingMode.LINES:
+                yield from self.__chunk_lines(file, f.readlines())
+            elif self.chunking_mode == ChunkingMode.CHARS:
+                yield from self.__chunk_text(file, f.read())
+
+
+    def __try_with_another_encoding(self, root: str, file: str):
+        # encodings = {
+        #                 "UTF-8", "UTF-16", "UTF-16LE", "UTF-16BE",
+        #                 "LATIN1"
+        #             } - {self.__file_encoding}
+
+        result = from_path("index.py").best()
+        if result is None or result.encoding == self.__file_encoding: return
+
+        try:
+            yield from self.__yield_chunks(root, file, result.encoding)
+
+        except (UnicodeDecodeError, UnicodeError) as e:
+            print(f"Encoding-related error in file {os.path.join(root, file)}. Exiting program...")
+            print(f"\n[ERROR OUTPUT]\n{e}")
+            exit(1)
+
+
+
     def chunk_repo(self, path):
         if not os.path.exists(path): return None
 
         for root, _, files in os.walk(path):
             for file in files:
                 if not self.__is_file_allowed(file): continue
+                if self.__debug: print(f"chunking file {os.path.join(root, file)}")
 
                 try:
-                    with open(os.path.join(root, file), "r", encoding=self.__file_encoding) as f:
-                        if self.chunking_mode == ChunkingMode.LINES:
-                            yield from self.__chunk_lines(file, f.readlines())
-                        elif self.chunking_mode == ChunkingMode.CHARS:
-                            yield from self.__chunk_text(file, f.read())
+                    yield from self.__yield_chunks(root, file, self.__file_encoding)
 
                 except (UnicodeDecodeError, UnicodeError) as e:
-                    print(f"Encoding-related error in file {os.path.join(root, file)}. Exiting program...")
-                    print(f"\n[ERROR OUTPUT]\n{e}")
-                    exit(1)
+                    results = self.__try_with_another_encoding(root, file)
+                    if results is not None:
+                        yield from results

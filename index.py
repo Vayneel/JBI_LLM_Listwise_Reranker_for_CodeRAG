@@ -7,9 +7,12 @@ from embedder import Embedder
 
 
 class Index:
-    def __init__(self, embedder: Embedder, persist_directory: str = "database", reset_db: bool = False):
+    __debug: bool
+
+    def __init__(self, embedder: Embedder, persist_directory: str = "database", debug: bool = False):
         self.__embedder: Embedder = embedder
         self.__client = chromadb.PersistentClient(path=persist_directory)
+        self.__debug = debug
 
         self.__collection = self.__client.get_or_create_collection(
             name="code_embeddings",
@@ -19,6 +22,7 @@ class Index:
         self.__record_count = self.__collection.count() + 1
 
     def add_record(self, record: dict[str, str | dict[str, str | int]]):
+        # todo add duplicate check
         embeddings = self.__embedder.embed_text(record["chunk"])
 
         self.__collection.add(
