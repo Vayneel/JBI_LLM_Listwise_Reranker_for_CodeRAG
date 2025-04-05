@@ -22,6 +22,7 @@ skip_cloning: bool = "--skip-cloning" in sys.argv and os.path.exists(LOCAL_REPO_
 if "--skip-cloning" in sys.argv: print("Cloning will be skipped" if skip_cloning else "Cloning won't be skipped")
 skip_indexing: bool = "--skip-indexing" in sys.argv and not reset_db and os.path.exists(LOCAL_DB_PATH)  # todo skip cloning dependant?
 if "--skip-indexing" in sys.argv: print("Indexing will be skipped" if skip_indexing else "Indexing won't be skipped")
+print_record_count: bool = "--print-record-count" in sys.argv
 
 
 # repo_url: str = ""  # change to whatever repo you need to skip repo url entering
@@ -82,6 +83,7 @@ def initialize_index():
 
     embedder = Embedder(debug=debug)
     index = Index(embedder, debug=debug)
+    if print_record_count: print(index.get_record_count())
 
 
 @print_done("Indexing")

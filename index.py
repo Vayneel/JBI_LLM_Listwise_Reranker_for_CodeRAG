@@ -21,6 +21,11 @@ class Index:
 
         self.__record_count = self.__collection.count() + 1
 
+
+    def get_record_count(self):
+        return self.__collection.count()
+
+
     def add_record(self, record: dict[str, str | dict[str, str | int]]):
         # todo add duplicate check
         embeddings = self.__embedder.embed_text(record["chunk"])

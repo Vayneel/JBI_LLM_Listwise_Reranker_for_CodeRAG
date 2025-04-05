@@ -97,7 +97,7 @@ class Chunker:
                 "chunk": chunk,
             }
 
-            current_line += int(line_step * 0.8)
+            current_line += max(int(line_step * 0.8), 4)
             chunk_index += 1
 
 
