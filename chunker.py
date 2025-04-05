@@ -2,7 +2,7 @@ import os
 from enum import Enum
 from charset_normalizer import from_path
 
-from embedder_old import Embedder
+from embedder import Embedder
 
 
 class ChunkingMode(Enum):

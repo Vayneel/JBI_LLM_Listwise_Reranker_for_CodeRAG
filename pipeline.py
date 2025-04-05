@@ -30,7 +30,7 @@ print_record_count: bool = "--print-record-count" in sys.argv
 repo_url: str = "https://github.com/viarotel-org/escrcpy.git"
 repo: git.Repo
 embedder: Embedder
-index: Index
+index: FaissIndex
 chunking_mode: ChunkingMode = ChunkingMode.LINES  # lines or chars
 chunk_size: int = 720  # how many lines / chars to put in single chunk (including chunk overlap)
 chunk_overlap: int = 240  # how many lines / chars are going to overlap with other chunks (half with previous, half with following chunk)
@@ -83,7 +83,7 @@ def initialize_index():
     global embedder, index
 
     embedder = Embedder(debug=debug)
-    index = Index(embedder, debug=debug)
+    index = FaissIndex(embedder, debug=debug)
     if print_record_count: print(index.get_record_count())
 
 
