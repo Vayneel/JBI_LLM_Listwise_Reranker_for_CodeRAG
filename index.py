@@ -11,7 +11,7 @@ class Index:
 
     def __init__(self, embedder: Embedder, persist_directory: str = "database", debug: bool = False):
         self.__embedder: Embedder = embedder
-        self.__client = chromadb.PersistentClient(path=persist_directory, settings=Settings(distance_function="cosine"))
+        self.__client = chromadb.PersistentClient(path=persist_directory)
         self.__debug = debug
 
         self.__collection = self.__client.get_or_create_collection(
