@@ -9,9 +9,13 @@ def main():
     clone_repo()  # tries to clone repo if exists
     initialize_index()
     index_files()  # chunking, embedding and indexing files from repo
-
-    user_query("Where is Russian?")
     print("All set up.\n")
+
+    query = ""
+    while query != "q":
+        query = input("Enter query (q to quit): ")
+        if query == "q": break
+        user_query(query)
 
 
 if __name__ == "__main__":
