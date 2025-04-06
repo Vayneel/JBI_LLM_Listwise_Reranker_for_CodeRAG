@@ -13,7 +13,7 @@ class ChromaIndex:
         self.__client = chromadb.PersistentClient(path=persist_directory)
         self.__debug = debug
 
-        if embedding_model is not Embedder:
+        if not isinstance(embedding_model, Embedder):
             self.__built_in_embeddings = True
 
             if embedding_model == "all-MiniLM-L6-v2":

@@ -100,7 +100,7 @@ def initialize_index():
     else:
         embedder = Embedder(debug=debug)
         index = INDEX(
-            embedder=embedder,
+            embedding_model=embedder,
             persist_directory=LOCAL_DB_PATH,
             debug=debug
         )

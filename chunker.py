@@ -1,6 +1,7 @@
 import os
 from enum import Enum
 from charset_normalizer import from_path
+from transformers import AutoTokenizer
 
 from embedder import Embedder
 
@@ -45,7 +46,14 @@ class Chunker:
         self.__chunk_overlap = chunk_overlap
         self.__chunk_all_files = chunk_all_files
         self.__file_encoding = encoding.upper()
-        self.__embedder = embedder
+
+        if embedder is None:
+            self.__built_in_embeddings = True
+            self.__tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        else:
+            self.__built_in_embeddings = False
+            self.__embedder = embedder
+
         self.__debug = debug
 
         if chunk_size < self.__chunk_overlap + 1: self.__chunk_size = self.__chunk_overlap + 1
@@ -75,6 +83,15 @@ class Chunker:
         return False
 
 
+    def __check_if_token_cap_not_reached(self, text: str) -> int:
+        if self.__built_in_embeddings:
+            tokens = self.__tokenizer(text)["input_ids"]
+            token_count = len(tokens)
+            return token_count < 256
+        else:
+            return self.__embedder.get_token_usage(text) < 512
+
+
     def __chunk_lines(self, filename: str, content: list[str]):
         current_line: int = 0
         chunk_index: int = 0  # index of chunk in the file; saved in metadata of chunk
@@ -83,7 +100,7 @@ class Chunker:
             chunk: str = f"{filename}\n"
             line_step: int = 0
 
-            while self.__embedder.get_token_usage(chunk) < 512:
+            while self.__check_if_token_cap_not_reached(chunk):
                 if current_line + line_step + 1 >= len(content): break
                 chunk += content[current_line + line_step].rstrip()
                 line_step += 1
