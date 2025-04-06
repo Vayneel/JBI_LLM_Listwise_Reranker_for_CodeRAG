@@ -42,8 +42,8 @@ repo: git.Repo
 embedder: Embedder
 index: INDEX
 chunking_mode: ChunkingMode = ChunkingMode.LINES  # LINES or CHARS
-chunk_size: int = 720  # how many chars to put in single chunk (including chunk overlap)
-chunk_overlap: int = 240  # how many chars are going to overlap with other chunks (half with previous, half with following chunk)
+chunk_size: int = 720  # (only for CHARS chunking mode) how many chars to put in single chunk (including chunk overlap)
+chunk_overlap: int = 240  # (only for CHARS chunking mode) how many chars are going to overlap with other chunks (half with previous, half with following chunk)
 chunk_all_files: bool = True
 
 

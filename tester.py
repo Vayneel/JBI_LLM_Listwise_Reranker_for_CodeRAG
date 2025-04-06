@@ -8,7 +8,7 @@ def load_test_data(json_path: str = 'test_inputs.json'):
 
 
 def recall_at_k(retrieved, relevant, k=10):
-    retrieved_at_k = retrieved[:k]
+    retrieved_at_k = set(retrieved[:k])
     relevant_set = set(relevant)
     hits = sum(1 for item in retrieved_at_k if item in relevant_set)
     return hits / min(len(relevant), k)
@@ -37,7 +37,7 @@ def run_tests():
         print(f"Query: {query}")
         print(f"Expected files: {expected_files}")
         print(f"Retrieved files: {retrieved_files}")
-        print(f"Recall@10: {score:.2f}\n")
+        print(f"Match score: {score:.2f}\n")
 
 
 if __name__ == "__main__":
