@@ -8,7 +8,7 @@ from embedder import Embedder
 
 class FaissIndex:
     """
-    A vector index implementation using FAISS for efficient similarity search.
+    A vector index implementation using FAISS.
     """
 
     def __init__(self, embedder: Embedder, persist_directory: str = "faiss_database", debug: bool = False):
@@ -121,54 +121,6 @@ class FaissIndex:
         # Periodically save the index (optional)
         if self.__record_count % 100 == 0:
             self.save()
-
-    def add_records_batch(self, records: List[Dict[str, Union[str, Dict[str, Union[str, int]]]]]):
-        """
-        Add multiple records to the index in batch.
-
-        Args:
-            records: A list of record dictionaries
-        """
-        if not records:
-            return
-
-        embeddings = []
-        new_documents = []
-        new_metadatas = []
-
-        for record in records:
-            chunk = record["chunk"]
-            metadata = record["metadata"]
-
-            # Skip duplicates
-            if chunk in self.__documents:
-                continue
-
-            # Get embedding
-            embedding = self.__embedder.embed_text(chunk)
-            embeddings.append(embedding)
-            new_documents.append(chunk)
-            new_metadatas.append(metadata)
-
-        if not embeddings:
-            return
-
-        # Convert to float32 array for FAISS
-        embeddings_array = np.float32(embeddings)
-
-        # Add to FAISS index
-        self.__index.add(embeddings_array)
-
-        # Store documents and metadata
-        self.__documents.extend(new_documents)
-        self.__metadatas.extend(new_metadatas)
-
-        self.__record_count += len(new_documents)
-
-        if self.__debug:
-            print(f"Added {len(new_documents)} records in batch")
-
-        self.save()
 
     def search(self, query: str, k: int = 10) -> List[Dict[str, Any]]:
         """

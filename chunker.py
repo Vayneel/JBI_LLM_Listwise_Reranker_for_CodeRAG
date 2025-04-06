@@ -60,7 +60,6 @@ class Chunker:
 
 
     def __is_file_allowed(self, file: str) -> bool:
-        # todo allow every file
         if self.__chunk_all_files: return True
 
         allowed_extensions = (
@@ -147,6 +146,7 @@ class Chunker:
     def __yield_chunks(self, root: str, filename: str, encoding: str):
         file = os.path.join(root, filename)
         with open(file, "r", encoding=encoding) as f:
+            file = file.replace("\\", "/")
             if self.chunking_mode == ChunkingMode.LINES:
                 yield from self.__chunk_lines(file, f.readlines())
             elif self.chunking_mode == ChunkingMode.CHARS:

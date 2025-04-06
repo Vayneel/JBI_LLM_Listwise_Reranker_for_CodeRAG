@@ -47,7 +47,6 @@ class ChromaIndex:
                 metadata={"hnsw:space": "cosine"}
             )
 
-
         self.__record_count = self.__collection.count() + 1
 
     def get_record_count(self):

@@ -41,10 +41,10 @@ repo_url: str = "https://github.com/viarotel-org/escrcpy.git"
 repo: git.Repo
 embedder: Embedder
 index: INDEX
-chunking_mode: ChunkingMode = ChunkingMode.LINES  # lines or chars
-chunk_size: int = 720  # how many lines / chars to put in single chunk (including chunk overlap)
-chunk_overlap: int = 240  # how many lines / chars are going to overlap with other chunks (half with previous, half with following chunk)
-chunk_all_files: bool = True  # enable at your own risk
+chunking_mode: ChunkingMode = ChunkingMode.LINES  # LINES or CHARS
+chunk_size: int = 720  # how many chars to put in single chunk (including chunk overlap)
+chunk_overlap: int = 240  # how many chars are going to overlap with other chunks (half with previous, half with following chunk)
+chunk_all_files: bool = True
 
 
 
@@ -115,7 +115,7 @@ def index_files():
         chunking_mode=chunking_mode,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
-        embedder=embedder,
+        embedder=None if BUILT_IN_EMBEDDINGS else embedder,
         chunk_all_files=chunk_all_files,
         encoding=ENCODING,
         debug=debug,
