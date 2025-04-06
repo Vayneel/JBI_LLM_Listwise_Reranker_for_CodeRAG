@@ -1,11 +1,41 @@
 import chromadb
+import os
 from chromadb.api.types import IncludeEnum
+from chromadb.utils import embedding_functions
 
 from embedder import Embedder
 
 
 class ChromaIndex:
-    __debug: bool
+    def __init__(self, embedding_model_name: str = "all-MiniLM-L6-v2", persist_directory: str = "chroma_database",
+                 debug: bool = False):
+        self.__client = chromadb.PersistentClient(path=persist_directory)
+        self.__debug = debug
+        self.__built_in_embeddings = True
+
+        if embedding_model_name == "all-MiniLM-L6-v2":
+            self.__embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name=embedding_model_name
+            )
+        # elif embedding_model_name == "openai":
+        #     self.__embedding_function = embedding_functions.OpenAIEmbeddingFunction(
+        #         api_key=os.environ.get("OPENAI_API_KEY"),
+        #         model_name="text-embedding-ada-002"
+        #     )
+        else:
+            print(f"Unsupported embedding model: {embedding_model_name}. Switching to `all-MiniLM-L6-v2`.")
+            self.__embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
+                model_name=embedding_model_name
+            )
+
+        self.__collection = self.__client.get_or_create_collection(
+            name="code_embeddings",
+            metadata={"hnsw:space": "cosine"},
+            embedding_function=self.__embedding_function
+        )
+
+        self.__record_count = self.__collection.count() + 1
+
 
     def __init__(self, embedder: Embedder, persist_directory: str = "chroma_database", debug: bool = False):
         self.__embedder: Embedder = embedder
@@ -23,13 +53,9 @@ class ChromaIndex:
     def get_record_count(self):
         return self.__collection.count()
 
-
     def add_record(self, record: dict[str, str | dict[str, str | int]]):
-        # todo add duplicate check
-        embeddings = self.__embedder.embed_text(record["chunk"])
-
+        # No need to manually embed text anymore
         self.__collection.add(
-            embeddings=[embeddings],
             documents=[record["chunk"]],
             metadatas=[record["metadata"]],
             ids=[str(self.__record_count)]
@@ -38,16 +64,14 @@ class ChromaIndex:
         self.__record_count += 1
 
     def search(self, query: str, k: int = 10):
-        query_embedding = self.__embedder.embed_text(query)
-
+        # No need to manually embed the query
         results = self.__collection.query(
-            query_embeddings=[query_embedding],
+            query_texts=[query],  # Use query_texts instead of query_embeddings
             n_results=k,
-            # include=[chromadb.Documents, chromadb.Metadata],
-            # include=["documents", "metadatas"],
             include=[
                 IncludeEnum.documents,
                 IncludeEnum.metadatas,
+                IncludeEnum.distances,  # Re-enabled distances
             ],
         )
 
@@ -56,12 +80,12 @@ class ChromaIndex:
                 "content": document,
                 "filename": metadata["filename"],
                 "chunk-index": metadata["chunk-index"],
-                # "score": score
+                "score": score  # Re-added scores
             }
-            for document, metadata,  # score
+            for document, metadata, score
             in zip(
                 results["documents"][0],
                 results["metadatas"][0],
-                # results["distances"][0]
+                results["distances"][0]
             )
         ]

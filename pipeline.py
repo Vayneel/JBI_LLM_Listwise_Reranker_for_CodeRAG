@@ -32,6 +32,9 @@ elif "--chroma" in sys.argv:
     INDEX = ChromaIndex
 else:
     INDEX = DEFAULT_INDEX  # todo maybe another later
+print(f"{"FAISS" if INDEX is FaissIndex else "Chroma"} will be used as index")
+BUILT_IN_EMBEDDINGS: bool = "--built-in-embeddings" in sys.argv and INDEX is ChromaIndex
+if BUILT_IN_EMBEDDINGS: print("Built-in embeddings activated")
 
 # repo_url: str = ""  # change to whatever repo you need to skip repo url entering
 repo_url: str = "https://github.com/viarotel-org/escrcpy.git"
@@ -89,8 +92,18 @@ def clone_repo():
 def initialize_index():
     global embedder, index
 
-    embedder = Embedder(debug=debug)
-    index = INDEX(embedder, debug=debug)
+    if BUILT_IN_EMBEDDINGS:
+        index = INDEX(
+            persist_directory=LOCAL_DB_PATH,
+            debug=debug
+        )
+    else:
+        embedder = Embedder(debug=debug)
+        index = INDEX(
+            embedder=embedder,
+            persist_directory=LOCAL_DB_PATH,
+            debug=debug
+        )
     if PRINT_RECORD_COUNT: print(index.get_record_count())
 
 
