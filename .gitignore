@@ -1,8 +1,11 @@
 repo/*
 repo/**
 
-database/*
-database/**
+chroma_database/*
+chroma_database/**
+
+faiss_database/*
+faiss_database/**
 
 temp/*
 temp/**

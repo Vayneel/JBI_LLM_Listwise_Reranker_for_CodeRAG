@@ -50,7 +50,7 @@ def preparation() -> None:
     if not SKIP_CLONING:
         remove_directory(LOCAL_REPO_PATH)  # if we've cloned some repository before, we need to remove old repo
     if reset_db:
-        remove_directory(LOCAL_DB_PATH)  # removes old database if enabled
+        remove_directory(LOCAL_DB_PATH)  # removes old chroma_database if enabled
 
 
 def repo_url_input():

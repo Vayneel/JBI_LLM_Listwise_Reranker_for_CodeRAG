@@ -7,7 +7,7 @@ from embedder import Embedder
 class ChromaIndex:
     __debug: bool
 
-    def __init__(self, embedder: Embedder, persist_directory: str = "database", debug: bool = False):
+    def __init__(self, embedder: Embedder, persist_directory: str = "chroma_database", debug: bool = False):
         self.__embedder: Embedder = embedder
         self.__client = chromadb.PersistentClient(path=persist_directory)
         self.__debug = debug
