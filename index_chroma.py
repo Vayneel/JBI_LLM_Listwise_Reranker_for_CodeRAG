@@ -4,7 +4,7 @@ from chromadb.api.types import IncludeEnum
 from embedder import Embedder
 
 
-class Index:
+class ChromaIndex:
     __debug: bool
 
     def __init__(self, embedder: Embedder, persist_directory: str = "database", debug: bool = False):

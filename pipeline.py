@@ -5,32 +5,39 @@ import os
 from utilities import print_done, remove_directory
 from chunker import Chunker, ChunkingMode
 from embedder import Embedder
-from index import Index
+from index_chroma import ChromaIndex
 from index_faiss import FaissIndex
 
 import git
 
-LOCAL_REPO_PATH: str = "repo"
-LOCAL_DB_PATH: str = "database"
-ENCODING: str | None = "UTF-8"
 
+LOCAL_REPO_PATH: str = "repo"
+ENCODING: str | None = "UTF-8"
+DEFAULT_INDEX: type(FaissIndex) | type(ChromaIndex) = ChromaIndex
+LOCAL_DB_PATH: str = "faiss_database" if DEFAULT_INDEX is FaissIndex else "chroma_index"
 
 debug: bool = "--debug" in sys.argv
 
 reset_db: bool = "--reset-db" in sys.argv
 
-skip_cloning: bool = "--skip-cloning" in sys.argv and os.path.exists(LOCAL_REPO_PATH)
-if "--skip-cloning" in sys.argv: print("Cloning will be skipped" if skip_cloning else "Cloning won't be skipped")
-skip_indexing: bool = "--skip-indexing" in sys.argv and not reset_db and os.path.exists(LOCAL_DB_PATH)  # todo skip cloning dependant?
-if "--skip-indexing" in sys.argv: print("Indexing will be skipped" if skip_indexing else "Indexing won't be skipped")
-print_record_count: bool = "--print-record-count" in sys.argv
-
+SKIP_CLONING: bool = "--skip-cloning" in sys.argv and os.path.exists(LOCAL_REPO_PATH)
+if "--skip-cloning" in sys.argv: print("Cloning will be skipped" if SKIP_CLONING else "Cloning won't be skipped")
+SKIP_INDEXING: bool = "--skip-indexing" in sys.argv and not reset_db and os.path.exists(LOCAL_DB_PATH)  # todo skip cloning dependant?
+if "--skip-indexing" in sys.argv: print("Indexing will be skipped" if SKIP_INDEXING else "Indexing won't be skipped")
+PRINT_RECORD_COUNT: bool = "--print-record-count" in sys.argv
+if "--faiss" in sys.argv:
+    os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+    INDEX = FaissIndex
+elif "--chroma" in sys.argv:
+    INDEX = ChromaIndex
+else:
+    INDEX = DEFAULT_INDEX  # todo maybe another later
 
 # repo_url: str = ""  # change to whatever repo you need to skip repo url entering
 repo_url: str = "https://github.com/viarotel-org/escrcpy.git"
 repo: git.Repo
 embedder: Embedder
-index: FaissIndex
+index: INDEX
 chunking_mode: ChunkingMode = ChunkingMode.LINES  # lines or chars
 chunk_size: int = 720  # how many lines / chars to put in single chunk (including chunk overlap)
 chunk_overlap: int = 240  # how many lines / chars are going to overlap with other chunks (half with previous, half with following chunk)
@@ -40,14 +47,14 @@ chunk_all_files: bool = True  # enable at your own risk
 
 @print_done("Program preparation")
 def preparation() -> None:
-    if not skip_cloning:
+    if not SKIP_CLONING:
         remove_directory(LOCAL_REPO_PATH)  # if we've cloned some repository before, we need to remove old repo
     if reset_db:
         remove_directory(LOCAL_DB_PATH)  # removes old database if enabled
 
 
 def repo_url_input():
-    if skip_cloning: return
+    if SKIP_CLONING: return
 
     global repo_url
 
@@ -63,7 +70,7 @@ def repo_url_input():
 
 @print_done("Repository cloning")
 def clone_repo():
-    if skip_cloning: return
+    if SKIP_CLONING: return
 
     global repo
 
@@ -83,13 +90,13 @@ def initialize_index():
     global embedder, index
 
     embedder = Embedder(debug=debug)
-    index = FaissIndex(embedder, debug=debug)
-    if print_record_count: print(index.get_record_count())
+    index = INDEX(embedder, debug=debug)
+    if PRINT_RECORD_COUNT: print(index.get_record_count())
 
 
 @print_done("Indexing")
 def index_files():
-    if skip_indexing: return
+    if SKIP_INDEXING: return
 
     chunker = Chunker(
         chunking_mode=chunking_mode,
